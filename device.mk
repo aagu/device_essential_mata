@@ -124,7 +124,7 @@ PRODUCT_PACKAGES += \
     android.hardware.camera.provider@2.4-impl:32 \
     android.hardware.camera.provider@2.4-service \
     libxml2 \
-    Snap
+    GCam
 
 # Dalvik
 PRODUCT_PROPERTY_OVERRIDES += \
