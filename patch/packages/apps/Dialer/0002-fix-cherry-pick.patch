@@ -1,0 +1,39 @@
+From 1758c60db133ff434c3a011455edd00239b1363e Mon Sep 17 00:00:00 2001
+From: aagu <aaguisme@gmail.com>
+Date: Fri, 8 Feb 2019 02:13:42 +0800
+Subject: [PATCH 2/3] fix cherry-pick
+
+---
+ .../android/dialer/lettertile/LetterTileDrawable.java    | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/java/com/android/dialer/lettertile/LetterTileDrawable.java b/java/com/android/dialer/lettertile/LetterTileDrawable.java
+index 33329af2..6dbbfc52 100644
+--- a/java/com/android/dialer/lettertile/LetterTileDrawable.java
++++ b/java/com/android/dialer/lettertile/LetterTileDrawable.java
+@@ -179,6 +179,13 @@ public class LetterTileDrawable extends Drawable {
+     return ('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z');
+   }
+ 
++  private static boolean isChineseLetter(final char c) {
++    if (c < 0x4E00 || c > 0x9FBF) {
++      return false;
++    }
++    return true;
++  }
++
+   @Override
+   public void draw(@NonNull final Canvas canvas) {
+     final Rect bounds = getBounds();
+@@ -339,7 +346,7 @@ public class LetterTileDrawable extends Drawable {
+       final String displayName, final String identifier) {
+     if (!TextUtils.isEmpty(displayName) && isEnglishLetter(displayName.charAt(0))) {
+       letter = Character.toUpperCase(displayName.charAt(0));
+-    } else if (!TextUtils.isEmpty(displayName) && com.mokee.utils.TextUtils.isChineseLetter(displayName.charAt(0))) {
++    } else if (!TextUtils.isEmpty(displayName) && isChineseLetter(displayName.charAt(0))) {
+       letter = Character.toUpperCase(displayName.charAt(0));
+       isChineseLetter = true;
+     } else {
+-- 
+2.20.1
+
