@@ -1,0 +1,202 @@
+From b7cdb39a0eee1a11c9f9ea5c39f1b07404c93a83 Mon Sep 17 00:00:00 2001
+From: aagu <aaguisme@gmail.com>
+Date: Thu, 7 Feb 2019 18:34:21 +0800
+Subject: [PATCH] support dispaly operator in Chinese
+
+---
+ .../telephony/ServiceStateTracker.java        |  16 +--
+ .../telephony/util/OperatorUtils.java         | 119 ++++++++++++++++++
+ 2 files changed, 128 insertions(+), 7 deletions(-)
+ create mode 100644 src/java/com/android/internal/telephony/util/OperatorUtils.java
+
+diff --git a/src/java/com/android/internal/telephony/ServiceStateTracker.java b/src/java/com/android/internal/telephony/ServiceStateTracker.java
+index acf1aaed7..aa5298489 100644
+--- a/src/java/com/android/internal/telephony/ServiceStateTracker.java
++++ b/src/java/com/android/internal/telephony/ServiceStateTracker.java
+@@ -101,6 +101,8 @@ import com.android.internal.telephony.util.TimeStampedValue;
+ import com.android.internal.util.ArrayUtils;
+ import com.android.internal.util.IndentingPrintWriter;
+ 
++import com.android.internal.telephony.util.OperatorUtils;
++
+ import java.io.FileDescriptor;
+ import java.io.PrintWriter;
+ import java.util.ArrayList;
+@@ -1967,9 +1969,9 @@ public class ServiceStateTracker extends Handler {
+                                         .getOperatorBrandOverride() : null;
+                         if (brandOverride != null) {
+                             log("EVENT_POLL_STATE_OPERATOR: use brandOverride=" + brandOverride);
+-                            mNewSS.setOperatorName(brandOverride, brandOverride, opNames[2]);
++                            mNewSS.setOperatorName(OperatorUtils.operatorReplace(brandOverride, opNames[2]), brandOverride, opNames[2]);
+                         } else {
+-                            mNewSS.setOperatorName(opNames[0], opNames[1], opNames[2]);
++                            mNewSS.setOperatorName(OperatorUtils.operatorReplace(opNames[0], opNames[2]), opNames[1], opNames[2]);
+                         }
+                     }
+                 } else {
+@@ -1992,15 +1994,15 @@ public class ServiceStateTracker extends Handler {
+ 
+                         if (!mIsSubscriptionFromRuim) {
+                             // NV device (as opposed to CSIM)
+-                            mNewSS.setOperatorName(opNames[0], opNames[1], opNames[2]);
++                            mNewSS.setOperatorName(OperatorUtils.operatorReplace(opNames[0], opNames[2]), opNames[1], opNames[2]);
+                         } else {
+                             String brandOverride = mUiccController.getUiccCard(getPhoneId()) != null
+                                     ? mUiccController.getUiccCard(getPhoneId())
+                                     .getOperatorBrandOverride() : null;
+                             if (brandOverride != null) {
+-                                mNewSS.setOperatorName(brandOverride, brandOverride, opNames[2]);
++                                mNewSS.setOperatorName(OperatorUtils.operatorReplace(brandOverride, opNames[2]), brandOverride, opNames[2]);
+                             } else {
+-                                mNewSS.setOperatorName(opNames[0], opNames[1], opNames[2]);
++                                mNewSS.setOperatorName(OperatorUtils.operatorReplace(opNames[0], opNames[2]), opNames[1], opNames[2]);
+                             }
+                         }
+                     } else {
+@@ -2348,7 +2350,7 @@ public class ServiceStateTracker extends Handler {
+                         "of service, set plmn='" + plmn + "'");
+             } else if (combinedRegState == ServiceState.STATE_IN_SERVICE) {
+                 // In either home or roaming service
+-                plmn = mSS.getOperatorAlpha();
++                plmn = OperatorUtils.operatorReplace(mSS.getOperatorAlphaLong(), mSS.getOperatorNumeric());
+                 showPlmn = !TextUtils.isEmpty(plmn) &&
+                         ((rule & SIMRecords.SPN_RULE_SHOW_PLMN)
+                                 == SIMRecords.SPN_RULE_SHOW_PLMN);
+@@ -2365,7 +2367,7 @@ public class ServiceStateTracker extends Handler {
+             //    EXTRA_SHOW_SPN = depending on IccRecords rule and radio/IMS state
+             //    EXTRA_SPN = spn
+             //    EXTRA_DATA_SPN = dataSpn
+-            String spn = (iccRecords != null) ? iccRecords.getServiceProviderName() : "";
++            String spn = (iccRecords != null) ? OperatorUtils.operatorReplace(iccRecords.getServiceProviderName(), mSS.getOperatorNumeric()) : "";
+             String dataSpn = spn;
+             boolean showSpn = !noService && !TextUtils.isEmpty(spn)
+                     && ((rule & SIMRecords.SPN_RULE_SHOW_SPN)
+diff --git a/src/java/com/android/internal/telephony/util/OperatorUtils.java b/src/java/com/android/internal/telephony/util/OperatorUtils.java
+new file mode 100644
+index 000000000..4f4f970a3
+--- /dev/null
++++ b/src/java/com/android/internal/telephony/util/OperatorUtils.java
+@@ -0,0 +1,119 @@
++/*
++ * Copyright (C) 2016 The MoKee Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.internal.telephony.util;
++
++import java.io.File;
++import java.io.FileNotFoundException;
++import java.io.FileReader;
++import java.io.IOException;
++import java.util.Map;
++import java.util.HashMap;
++
++import org.xmlpull.v1.XmlPullParser;
++import org.xmlpull.v1.XmlPullParserException;
++
++import android.os.Environment;
++import android.telephony.Rlog;
++import android.util.Xml;
++
++import com.android.internal.util.XmlUtils;
++
++public class OperatorUtils {
++
++    // Initialize list of Operator codes
++    // this will be taken care of when garbage collection starts.
++    private HashMap<String, String> initList() {
++        HashMap<String, String> init = new HashMap<String, String>();
++        // taken from spnOveride.java
++
++        FileReader spnReader;
++
++        final File spnFile = new File(Environment.getRootDirectory(),
++                "etc/selective-spn-conf.xml");
++
++        try {
++            spnReader = new FileReader(spnFile);
++        } catch (FileNotFoundException e) {
++            Rlog.w("Operatorcheck", "Can not open " +
++                    Environment.getRootDirectory() + "/etc/selective-spn-conf.xml");
++            return init;
++        }
++
++        try {
++            XmlPullParser parser = Xml.newPullParser();
++            parser.setInput(spnReader);
++
++            XmlUtils.beginDocument(parser, "spnOverrides");
++
++            while (true) {
++                XmlUtils.nextElement(parser);
++
++                String name = parser.getName();
++                if (!"spnOverride".equals(name)) {
++                    break;
++                }
++
++                String numeric = parser.getAttributeValue(null, "numeric");
++                String data = parser.getAttributeValue(null, "spn");
++
++                init.put(numeric, data);
++            }
++        } catch (XmlPullParserException e) {
++            Rlog.w("Operatorcheck", "Exception in spn-conf parser " + e);
++        } catch (IOException e) {
++            Rlog.w("Operatorcheck", "Exception in spn-conf parser " + e);
++        }
++        return init;
++    }
++
++    // this will stay persistant in memory when called
++    private static String stored = null;
++    private static String storedOperators = null;
++
++    public static String operatorReplace(String longName, String numeric){
++        // sanity checking if the value is actually not equal to the range apn
++        // numerics
++        // if it is null, check your ril class.
++        if (numeric == null || !numeric.startsWith("460")
++           || (5 != numeric.length() && numeric.length() != 6)){
++            return longName;
++        }
++        // this will check if the stored value is equal to other.
++        // this uses a technique called last known of good value.
++        // along with sanity checking
++        if (storedOperators != null && stored != null && stored.equals(numeric)){
++            return storedOperators;
++        }
++        stored = numeric;
++        try {
++            // this will find out if it a number then it will catch it based
++            // on invalid chars.
++            Integer.parseInt(numeric);
++        }  catch(NumberFormatException E){
++            // not a number, pass it along to stored operator until the next
++            // round.
++            storedOperators = numeric;
++            return storedOperators;
++        }
++        // this code will be taking care of when garbage collection start
++        OperatorUtils init = new OperatorUtils();
++        Map<String, String> operators = init.initList();
++        storedOperators = operators.containsKey(numeric) ? operators.get(numeric) : longName;
++        return storedOperators;
++    }
++
++}
+\ No newline at end of file
+-- 
+2.20.1
+
