@@ -437,3 +437,17 @@ PRODUCT_PACKAGES += \
     libwifi-hal-qcom \
     wpa_supplicant \
     wpa_supplicant.conf
+
+PRODUCT_COPY_FILES += \
+    device/essential/mata/prebuilts/lib/libfilterpack_facedetect.so:$(TARGET_COPY_OUT_SYSTEM)/lib/libfilterpack_facedetect.so \
+    device/essential/mata/prebuilts/lib/libfrsdk.so:$(TARGET_COPY_OUT_SYSTEM)/lib/libfrsdk.so \
+    device/essential/mata/prebuilts/lib64/libfacenet.so:$(TARGET_COPY_OUT_SYSTEM)/lib64/libfacenet.so \
+    device/essential/mata/prebuilts/lib64/libfilterpack_facedetect.so:$(TARGET_COPY_OUT_SYSTEM)/lib64/libfilterpack_facedetect.so \
+    device/essential/mata/prebuilts/lib64/libfrsdk.so:$(TARGET_COPY_OUT_SYSTEM)/lib64/libfrsdk.so \
+    device/essential/mata/prebuilts/lib/libsketchology_native.so:$(TARGET_COPY_OUT_SYSTEM)/lib/libsketchology_native.so \
+    device/essential/mata/prebuilts/lib64/libsketchology_native.so:$(TARGET_COPY_OUT_SYSTEM)/lib64/libsketchology_native.so
+
+PRODUCT_PACKAGES += \
+    FaceLock \
+    MarkupGoogle \
+    libfacenet.so
