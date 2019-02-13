@@ -450,4 +450,5 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += \
     FaceLock \
     MarkupGoogle \
+    Wellbeing \
     libfacenet.so
