@@ -1,2 +1,1 @@
-allow radio vendor_file:lnk_file { ioctl read getattr lock map open };
 get_prop(radio, qcom_ims_prop)
