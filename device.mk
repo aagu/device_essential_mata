@@ -442,3 +442,6 @@ PRODUCT_COPY_FILES += \
     device/essential/mata/prebuilts/lib64/libfrsdk.so:$(TARGET_COPY_OUT_SYSTEM)/lib64/libfrsdk.so \
     device/essential/mata/prebuilts/lib/libsketchology_native.so:$(TARGET_COPY_OUT_SYSTEM)/lib/libsketchology_native.so \
     device/essential/mata/prebuilts/lib64/libsketchology_native.so:$(TARGET_COPY_OUT_SYSTEM)/lib64/libsketchology_native.so
+
+# GApps
+$(call inherit-product, vendor/pixelgapps/pixel-gapps.mk)
