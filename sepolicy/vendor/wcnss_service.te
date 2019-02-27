@@ -1,1 +1,3 @@
+typeattribute wcnss_service data_between_core_and_vendor_violators;
+
 get_prop(wcnss_service, cnss_prop)
