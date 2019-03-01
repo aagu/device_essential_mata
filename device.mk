@@ -194,7 +194,6 @@ PRODUCT_PACKAGES += \
     init.performance.mata.rc \
     init.qcom.devstart.sh \
     init.qcom.power.sh \
-    init.qcom.post_boot.sh \
     ueventd.mata.rc
 
 # IPACM
